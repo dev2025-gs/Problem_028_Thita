@@ -1,0 +1,183 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Minimum Swaps to Balance Brackets – Visualizer</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        background: #f5f7fa;
+        padding: 20px;
+      }
+      h1 {
+        margin-bottom: 5px;
+      }
+      input {
+        width: 400px;
+        padding: 8px;
+        font-size: 16px;
+      }
+      button {
+        padding: 8px 14px;
+        font-size: 16px;
+        cursor: pointer;
+        margin-left: 8px;
+      }
+      #bracketRow {
+        display: flex;
+        align-items: flex-end;
+        min-height: 60px;
+        margin-top: 30px;
+        border-left: 2px solid #333;
+        border-bottom: 2px solid #333;
+        padding: 10px;
+        gap: 6px;
+        background: #fff;
+      }
+      .bracket {
+        width: 30px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 28px;
+        border-radius: 6px;
+        border: 2px solid #bbb;
+        background: #e3eaf2;
+        position: relative;
+        transition: background 0.2s, border 0.2s;
+      }
+      .bracket.open {
+        background: #b3e6b3;
+        border-color: #4caf50;
+      }
+      .bracket.close {
+        background: #ffb3b3;
+        border-color: #e53935;
+      }
+      .bracket.matched {
+        background: #b3d8ff;
+        border-color: #1976d2;
+      }
+      .bracket.imbalance {
+        background: #ffe082;
+        border-color: #ff9800;
+      }
+      .bracket.current {
+        box-shadow: 0 0 0 3px #1976d2;
+        z-index: 1;
+      }
+      #info {
+        margin-top: 20px;
+        font-size: 18px;
+      }
+      #stepBtns {
+        margin-top: 18px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Minimum Swaps to Balance Brackets – Animation</h1>
+    <p>Enter bracket string (e.g. <code>][][[]]</code>):</p>
+    <input id="input" value="][][[]]" maxlength="100" />
+    <button onclick="start()">Start Animation</button>
+    <div id="stepBtns" style="display:none">
+      <button onclick="prevStep()">Previous</button>
+      <button onclick="nextStep()">Next</button>
+    </div>
+    <div id="bracketRow"></div>
+    <div id="info"></div>
+    <script>
+      let s, steps, stepIndex;
+      function start() {
+        s = document.getElementById("input").value.trim();
+        if (!/^[\[\]]+$/.test(s)) {
+          alert("Input must only contain '[' and ']' characters.");
+          return;
+        }
+        steps = buildSteps(s);
+        stepIndex = 0;
+        document.getElementById("stepBtns").style.display = "block";
+        renderStep();
+      }
+      function buildSteps(s) {
+        let open_available = 0, imbalance = 0;
+        const steps = [];
+        for (let i = 0; i < s.length; i++) {
+          const ch = s[i];
+          let action = "";
+          let matched = false;
+          if (ch === "[") {
+            open_available++;
+            action = "Open bracket: increment open_available.";
+          } else {
+            if (open_available > 0) {
+              open_available--;
+              matched = true;
+              action = "Close bracket: matched with open, decrement open_available.";
+            } else {
+              imbalance++;
+              action = "Close bracket: no open available, increment imbalance.";
+            }
+          }
+          steps.push({
+            index: i,
+            char: ch,
+            open_available,
+            imbalance,
+            matched,
+            action,
+            s: s.split("")
+          });
+        }
+        // Final step: show result
+        steps.push({
+          index: s.length,
+          char: null,
+          open_available,
+          imbalance,
+          matched: false,
+          action: `Done. Minimum swaps = ${(imbalance + 1) >> 1}`,
+          s: s.split("")
+        });
+        return steps;
+      }
+      function renderStep() {
+        const step = steps[stepIndex];
+        const row = document.getElementById("bracketRow");
+        row.innerHTML = "";
+        step.s.forEach((ch, i) => {
+          const div = document.createElement("div");
+          div.className = "bracket";
+          if (i === step.index) div.classList.add("current");
+          if (i < step.index) {
+            if (ch === "[") div.classList.add("open");
+            else if (step.matched && i === step.index - 1) div.classList.add("matched");
+            else div.classList.add("close");
+          }
+          if (i === step.index - 1 && step.imbalance > 0 && !step.matched && ch === "]") div.classList.add("imbalance");
+          div.textContent = ch;
+          row.appendChild(div);
+        });
+        document.getElementById("info").innerHTML =
+          step.char !== null
+            ? `<b>Step ${step.index + 1}:</b> '${step.char}'<br>
+              open_available = ${step.open_available}, imbalance = ${step.imbalance}<br>
+              <i>${step.action}</i>`
+            : `<b>✅ Done!</b><br>Minimum swaps required: <b>${(step.imbalance + 1) >> 1}</b>`;
+      }
+      function nextStep() {
+        if (stepIndex < steps.length - 1) {
+          stepIndex++;
+          renderStep();
+        }
+      }
+      function prevStep() {
+        if (stepIndex > 0) {
+          stepIndex--;
+          renderStep();
+        }
+      }
+    </script>
+  </body>
+</html>
